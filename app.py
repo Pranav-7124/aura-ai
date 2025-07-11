@@ -1,50 +1,63 @@
 from flask import Flask, render_template, request, jsonify
-import requests
-import os
 from dotenv import load_dotenv
+import os
+import requests
 
+# Load environment variables
 load_dotenv()
-
 app = Flask(__name__)
-api_key = os.getenv("OPENROUTER_API_KEY")
 
-@app.route('/')
+# Get the OpenRouter API key
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+# Custom metadata for Pranav
+PRANAV_INFO = (
+    "Pranav Kalbhor is a 3rd year CSE student at MIT ADT University currently specializing in "
+    "Artificial Intelligence and analytics. He's passionate about exploring and creating innovative "
+    "projects in the tech space. Pranav built A.U.R.A., your adaptive AI mental health and wellness companion. "
+    "In the gaming world, he's known as 'Goblin' and plays Valorant and BGMI."
+)
+
+# Route for landing page
+@app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route('/get', methods=['POST'])
-def get_response():
-    user_message = request.json.get("message")
-
-    # Personal response rules
-    if "who built you" in user_message.lower() or "who is pranav" in user_message.lower():
-        return jsonify({"reply": (
-            "Pranav Kalbhor is a 3rd year CSE student at MIT ADT University, currently specializing in Artificial Intelligence and Analytics. "
-            "He’s passionate about building innovative tech like me, A.U.R.A., an empathetic mental wellness assistant. "
-            "He's also a gamer known as 'Goblin', playing Valorant and BGMI."
-        )})
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "model": "openai/gpt-3.5-turbo",
-        "messages": [
-            {"role": "system", "content": "You are A.U.R.A., an empathetic mental health assistant built by Pranav Kalbhor. Be calm, supportive, and helpful."},
-            {"role": "user", "content": user_message}
-        ]
-    }
-
+# API route for chat
+@app.route("/chat", methods=["POST"])
+def chat():
     try:
+        user_input = request.json.get("message", "")
+
+        # Custom logic for Pranav questions
+        if "who is pranav" in user_input.lower():
+            return jsonify({"response": PRANAV_INFO})
+        elif "who built you" in user_input.lower():
+            return jsonify({"response": "I was built by Pranav Kalbhor, a tech enthusiast and AI developer from MIT ADT University."})
+
+        # Fallback to Mistral via OpenRouter
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "mistralai/mistral-7b-instruct:free",
+            "messages": [
+                {"role": "system", "content": "You are A.U.R.A., a friendly, empathetic mental health and wellness assistant."},
+                {"role": "user", "content": user_input}
+            ]
+        }
+
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-        reply = response.json()["choices"][0]["message"]["content"]
+        response.raise_for_status()
+
+        result = response.json()
+        bot_reply = result['choices'][0]['message']['content']
+        return jsonify({"response": bot_reply})
+
     except Exception as e:
-        print("API Error:", e)
-        reply = "Oops! Something went wrong. Try again later."
+        return jsonify({"response": f"Error - {str(e)}"})
 
-    return jsonify({"reply": reply})
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
