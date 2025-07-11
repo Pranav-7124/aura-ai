@@ -1,58 +1,86 @@
 body {
-  background: #111;
-  color: #eee;
   font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  color: white;
+  margin: 0;
+  padding: 0;
   display: flex;
+  height: 100vh;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
 }
+
 .container {
-  text-align: center;
   width: 90%;
   max-width: 600px;
-  background: #1e1e1e;
-  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
   border-radius: 15px;
-  box-shadow: 0 0 20px #00ffdd33;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(6px);
+  text-align: center;
 }
-h1 {
-  color: #00ffc8;
+
+.aura-title {
+  font-size: 2.5rem;
+  margin-bottom: 5px;
+  color: #7df9ff;
 }
-#chat-box {
+
+.subtitle {
+  font-size: 1rem;
+  margin-bottom: 20px;
+  color: #ffffffb0;
+}
+
+.chat-box {
   height: 300px;
   overflow-y: auto;
-  border: 1px solid #444;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   padding: 10px;
-  margin: 20px 0;
-  background: #222;
-  border-radius: 8px;
+  margin-bottom: 15px;
 }
-.user-msg {
-  text-align: right;
-  color: #00d1ff;
-  margin-bottom: 8px;
+
+.input-container {
+  display: flex;
+  gap: 10px;
 }
-.bot-msg {
-  text-align: left;
-  color: #ffd86b;
-  margin-bottom: 8px;
-}
-input {
-  width: 70%;
-  padding: 10px;
-  border-radius: 8px;
+
+input[type="text"] {
+  flex-grow: 1;
+  padding: 12px;
+  border-radius: 10px;
   border: none;
-  margin-right: 10px;
+  outline: none;
 }
+
 button {
-  padding: 10px 20px;
-  background: #00ffc8;
+  background-color: #7df9ff;
   border: none;
-  border-radius: 8px;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
+
 button:hover {
-  background: #00ffae;
+  background-color: #00c3ff;
+}
+
+.footer {
+  margin-top: 15px;
+}
+
+#about-popup {
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  border-radius: 10px;
+  display: none;
+}
+
+.hidden {
+  display: none;
 }
