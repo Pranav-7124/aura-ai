@@ -3,72 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>A.U.R.A. - Your Companion</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>A.U.R.A. – Your Mental Wellness AI</title>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="hero">
-    <h1>A.U.R.A.</h1>
+  <div class="container">
+    <h1 class="title">A.U.R.A.</h1>
     <p class="subtitle">Adaptive Understanding & Responsive Assistant</p>
+
     <div class="chat-box" id="chat-box">
-      <div class="message aura">Hi there! I’m A.U.R.A. 🌸 How are you feeling today?</div>
+      <div class="bot-message">Hello, I'm A.U.R.A. ✨ How can I support you today?</div>
     </div>
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Type your message..."/>
+
+    <div class="input-container">
+      <input type="text" id="user-input" placeholder="Ask me anything..." />
       <button onclick="sendMessage()">Send</button>
     </div>
+
+    <footer>Made with 💜 by Pranav Kalbhor</footer>
   </div>
-  <footer>Built with ❤️ by Pranav Kalbhor</footer>
 
   <script>
-    const chatBox = document.getElementById("chat-box");
-    const userInput = document.getElementById("user-input");
-
-    function appendMessage(content, className) {
-      const messageDiv = document.createElement("div");
-      messageDiv.classList.add("message", className);
-      messageDiv.textContent = content;
-      chatBox.appendChild(messageDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function simulateTyping(text) {
-      let index = 0;
-      const typingDiv = document.createElement("div");
-      typingDiv.classList.add("message", "aura");
-      chatBox.appendChild(typingDiv);
-
-      function typeNext() {
-        if (index < text.length) {
-          typingDiv.textContent += text[index++];
-          chatBox.scrollTop = chatBox.scrollHeight;
-          setTimeout(typeNext, 30);
-        }
-      }
-      typeNext();
-    }
-
     async function sendMessage() {
-      const message = userInput.value.trim();
-      if (message === "") return;
+      const input = document.getElementById("user-input");
+      const chatBox = document.getElementById("chat-box");
 
-      appendMessage(message, "user");
-      userInput.value = "";
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      chatBox.innerHTML += `<div class="user-message">You: ${userMessage}</div>`;
+      input.value = "";
+
+      const typingEl = document.createElement("div");
+      typingEl.className = "bot-message";
+      typingEl.innerText = "A.U.R.A. is typing...";
+      chatBox.appendChild(typingEl);
+      chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
-        const res = await fetch("/chat", {
+        const response = await fetch("/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ message: message })
+          body: JSON.stringify({ prompt: userMessage })
         });
 
-        const data = await res.json();
-        simulateTyping(data.response);
-      } catch (err) {
-        simulateTyping("⚠️ Error connecting to A.U.R.A.");
+        const data = await response.json();
+
+        // Typing animation
+        let i = 0;
+        typingEl.innerText = "A.U.R.A.: ";
+        const interval = setInterval(() => {
+          typingEl.innerText += data.response.charAt(i);
+          i++;
+          if (i >= data.response.length) clearInterval(interval);
+        }, 30);
+      } catch (error) {
+        typingEl.innerText = "Error connecting to A.U.R.A.";
       }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
 </body>
