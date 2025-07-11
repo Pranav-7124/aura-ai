@@ -2,52 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>A.U.R.A. | Mental Wellness Companion</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>A.U.R.A. - Mental Wellness Companion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>A.U.R.A. 👾</h1>
-    <p>Your Adaptive Understanding & Responsive Assistant</p>
-    <div id="chat-box"></div>
-    <input type="text" id="user-input" placeholder="Type your thoughts...">
-    <button onclick="sendMessage()">Send</button>
+  <div id="particles-js"></div>
+
+  <div class="main-container">
+    <header>
+      <h1 class="logo">A.U.R.A.</h1>
+      <p class="tagline">Adaptive Understanding & Responsive Assistant</p>
+      <div class="theme-toggle">
+        <i class="fas fa-sun" id="lightMode"></i>
+        <i class="fas fa-moon" id="darkMode"></i>
+      </div>
+    </header>
+
+    <div class="chat-avatar">
+      <div class="glow-ring"></div>
+      <img src="https://i.ibb.co/VLTCd3W/aura-icon.png" alt="AURA" class="avatar-img">
+    </div>
+
+    <div class="chat-box" id="chat-box">
+      <!-- Messages append here -->
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your thoughts..." />
+      <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+      <button id="voice-btn"><i class="fas fa-microphone"></i></button>
+    </div>
+
+    <button class="about-btn" onclick="toggleAbout()">👤 About Pranav</button>
+    <div class="about-box" id="about-box">
+      <p><strong>Pranav Kalbhor</strong> is a 3rd year CSE student at MIT ADT University, specializing in AI & Analytics. He's a tech creator and gamer known as <strong>Goblin</strong> in Valorant/BGMI. He built A.U.R.A. as a mindful companion for emotional well-being. 💙</p>
+    </div>
+
+    <footer>
+      <p>Built with 💜 by <strong>Pranav Kalbhor</strong> | © 2025</p>
+    </footer>
   </div>
 
-  <script>
-    async function sendMessage() {
-      const input = document.getElementById('user-input');
-      const message = input.value.trim();
-      if (!message) return;
-
-      const chatBox = document.getElementById('chat-box');
-      const userDiv = document.createElement('div');
-      userDiv.className = 'user-msg';
-      userDiv.textContent = "You: " + message;
-      chatBox.appendChild(userDiv);
-      input.value = "";
-
-      const botDiv = document.createElement('div');
-      botDiv.className = 'bot-msg';
-      botDiv.textContent = "A.U.R.A. is typing...";
-      chatBox.appendChild(botDiv);
-
-      const response = await fetch('/ask', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ message })
-      });
-
-      const data = await response.json();
-      botDiv.textContent = "";
-
-      let i = 0;
-      const typing = setInterval(() => {
-        botDiv.textContent += data.reply.charAt(i);
-        i++;
-        if (i >= data.reply.length) clearInterval(typing);
-      }, 30);
-    }
-  </script>
+  <script src="{{ url_for('static', filename='particles.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

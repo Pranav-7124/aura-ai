@@ -1,54 +1,42 @@
-document.getElementById('send-btn').addEventListener('click', sendMessage);
-document.getElementById('voice-btn').addEventListener('click', startVoiceInput);
-document.getElementById('about-btn').addEventListener('click', () => {
-  const popup = document.getElementById('about-popup');
-  popup.classList.toggle('hidden');
-});
-
-function appendMessage(sender, message) {
-  const chatBox = document.getElementById('chat-box');
-  const msgDiv = document.createElement('div');
-  msgDiv.innerHTML = `<strong>${sender}:</strong> <span class="typing-text"></span>`;
-  chatBox.appendChild(msgDiv);
-  
-  const span = msgDiv.querySelector('.typing-text');
-  let i = 0;
-  const typeEffect = setInterval(() => {
-    if (i < message.length) {
-      span.innerHTML += message.charAt(i);
-      i++;
-    } else {
-      clearInterval(typeEffect);
-    }
-  }, 30);
-
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
 function sendMessage() {
-  const input = document.getElementById('user-input');
-  const message = input.value.trim();
+  const userInput = document.getElementById("userInput");
+  const message = userInput.value.trim();
   if (!message) return;
-  appendMessage("You", message);
-  input.value = "";
+
+  appendMessage(message, "user-message");
+  userInput.value = "";
 
   fetch("/get", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ msg: message })
+    body: JSON.stringify({ message: message })
   })
-  .then(res => res.json())
-  .then(data => appendMessage("A.U.R.A.", data.response));
+  .then(response => response.json())
+  .then(data => typeMessage(data.reply, "bot-message"));
 }
 
-function startVoiceInput() {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
-  recognition.start();
+function appendMessage(text, className) {
+  const chatbox = document.getElementById("chatbox");
+  const messageDiv = document.createElement("div");
+  messageDiv.className = className;
+  messageDiv.textContent = text;
+  chatbox.appendChild(messageDiv);
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
 
-  recognition.onresult = function(event) {
-    const transcript = event.results[0][0].transcript;
-    document.getElementById('user-input').value = transcript;
-    sendMessage();
-  };
+function typeMessage(text, className) {
+  const chatbox = document.getElementById("chatbox");
+  const messageDiv = document.createElement("div");
+  messageDiv.className = className;
+  chatbox.appendChild(messageDiv);
+  let index = 0;
+  const interval = setInterval(() => {
+    if (index < text.length) {
+      messageDiv.textContent += text.charAt(index);
+      index++;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    } else {
+      clearInterval(interval);
+    }
+  }, 30);
 }
