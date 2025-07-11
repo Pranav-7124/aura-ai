@@ -3,84 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>A.U.R.A. - Your Wellness Companion</title>
+  <title>A.U.R.A. - Adaptive Understanding & Responsive Assistant</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="aura-wrapper">
-    <header>
-      <h1>A.U.R.A.</h1>
-      <p>Your Adaptive Understanding & Responsive Assistant</p>
-    </header>
+  <div class="container">
+    <h1>A.U.R.A.</h1>
+    <p class="tagline">Adaptive Understanding & Responsive Assistant</p>
 
-    <div class="chat-container" id="chat-container">
-      <div class="message aura-message">
-        <span class="name">A.U.R.A.:</span> Hello! I'm here for you. How can I help today?
-      </div>
+    <div class="chat-box" id="chat-box">
+      <div class="bot-message">Hi, I’m A.U.R.A. — how can I support you today?</div>
     </div>
 
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off"/>
-      <button onclick="sendMessage()">Send</button>
-    </div>
-
-    <footer>
-      <p>Built with ❤️ by <strong>Pranav Kalbhor</strong> | Gen Z AI Experience ✨</p>
-    </footer>
+    <form id="chat-form">
+      <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
   </div>
 
-  <script>
-    async function sendMessage() {
-      const input = document.getElementById("user-input");
-      const chatContainer = document.getElementById("chat-container");
-      const message = input.value.trim();
-      if (!message) return;
+  <footer>
+    Built with ❤️ by <strong>Pranav Kalbhor</strong>
+  </footer>
 
-      // Add user's message
-      chatContainer.innerHTML += `
-        <div class="message user-message">
-          <span class="name">You:</span> ${message}
-        </div>
-      `;
+  <script>
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("user-input");
+    const chatBox = document.getElementById("chat-box");
+
+    function appendMessage(sender, text) {
+      const msg = document.createElement("div");
+      msg.className = `${sender}-message`;
+      chatBox.appendChild(msg);
+
+      let i = 0;
+      const typing = setInterval(() => {
+        msg.innerHTML = text.substring(0, i++) + "|";
+        if (i > text.length) {
+          clearInterval(typing);
+          msg.innerHTML = text;
+        }
+      }, 20);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userText = input.value.trim();
+      if (!userText) return;
+      appendMessage("user", userText);
       input.value = "";
 
-      // Scroll to bottom
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ user_input: userText }),
+        });
 
-      // Add typing...
-      const loadingDiv = document.createElement("div");
-      loadingDiv.classList.add("message", "aura-message");
-      loadingDiv.innerHTML = `<span class="name">A.U.R.A.:</span> <span class="typing">Typing...</span>`;
-      chatContainer.appendChild(loadingDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      const res = await fetch("/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message}),
-      });
-
-      const data = await res.json();
-
-      // Replace typing... with animated text
-      const botReply = document.createElement("div");
-      botReply.classList.add("message", "aura-message");
-      botReply.innerHTML = `<span class="name">A.U.R.A.:</span> <span class="bot-reply"></span>`;
-      chatContainer.replaceChild(botReply, loadingDiv);
-
-      const replyElem = botReply.querySelector(".bot-reply");
-      let i = 0;
-      function typeEffect() {
-        if (i < data.response.length) {
-          replyElem.innerHTML += data.response.charAt(i);
-          i++;
-          setTimeout(typeEffect, 20);
-        }
+        const data = await res.json();
+        appendMessage("bot", data.response);
+      } catch (err) {
+        appendMessage("bot", "Error connecting to A.U.R.A.");
       }
-      typeEffect();
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
+    });
   </script>
 </body>
 </html>
