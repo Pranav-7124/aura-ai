@@ -1,42 +1,33 @@
-function sendMessage() {
-  const userInput = document.getElementById("userInput");
-  const message = userInput.value.trim();
-  if (!message) return;
+function typeText(element, text, delay = 20) {
+    element.innerHTML = "";
+    let i = 0;
 
-  appendMessage(message, "user-message");
-  userInput.value = "";
-
-  fetch("/get", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: message })
-  })
-  .then(response => response.json())
-  .then(data => typeMessage(data.reply, "bot-message"));
-}
-
-function appendMessage(text, className) {
-  const chatbox = document.getElementById("chatbox");
-  const messageDiv = document.createElement("div");
-  messageDiv.className = className;
-  messageDiv.textContent = text;
-  chatbox.appendChild(messageDiv);
-  chatbox.scrollTop = chatbox.scrollHeight;
-}
-
-function typeMessage(text, className) {
-  const chatbox = document.getElementById("chatbox");
-  const messageDiv = document.createElement("div");
-  messageDiv.className = className;
-  chatbox.appendChild(messageDiv);
-  let index = 0;
-  const interval = setInterval(() => {
-    if (index < text.length) {
-      messageDiv.textContent += text.charAt(index);
-      index++;
-      chatbox.scrollTop = chatbox.scrollHeight;
-    } else {
-      clearInterval(interval);
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(type, delay);
+        }
     }
-  }, 30);
+
+    type();
+}
+
+function appendMessage(sender, text) {
+    const chatbox = document.getElementById("chatbox");
+
+    const messageDiv = document.createElement("div");
+    messageDiv.className = sender === "user" ? "user-message" : "aura-message";
+
+    const span = document.createElement("span");
+    messageDiv.appendChild(span);
+    chatbox.appendChild(messageDiv);
+
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    if (sender === "aura") {
+        typeText(span, text, 20);
+    } else {
+        span.innerText = text;
+    }
 }
