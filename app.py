@@ -1,19 +1,17 @@
 from flask import Flask, render_template, request, jsonify
-from openai import OpenAI
+import openai
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
 
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+# Set OpenRouter key and endpoint
+openai.api_key = os.getenv("PENROUTER_API_KEY")
+openai.api_base = "https://openrouter.ai/api/v1"
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# A.U.R.A.'s memory and personality
+# AURA's identity
 system_prompt = """
 You are A.U.R.A. (Adaptive Understanding & Responsive Assistant), an AI mental health companion.
 You are designed to be kind, calm, emotionally intelligent, and supportive in conversations.
@@ -27,7 +25,6 @@ He built A.U.R.A. to help users with their mental wellness and provide an emotio
 Outside tech, he loves gaming and is known as Goblin in Valorant and BGMI."
 """
 
-# Routes
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -36,17 +33,16 @@ def index():
 def chat():
     user_message = request.json["message"]
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+    response = openai.ChatCompletion.create(
+        model="openchat/openchat-3.5-1210",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message}
         ]
     )
 
-    bot_reply = response.choices[0].message.content
+    bot_reply = response.choices[0].message["content"]
     return jsonify({"reply": bot_reply})
 
-# Run the app locally (ignored on Render)
 if __name__ == "__main__":
     app.run(debug=True)
