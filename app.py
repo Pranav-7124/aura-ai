@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
 import os
 import requests
-from dotenv import load_dotenv
 
 load_dotenv()
+
 app = Flask(__name__)
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
 HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "Content-Type": "application/json"
@@ -18,23 +20,29 @@ def index():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_input = request.form['user_input'].strip().lower()
+    user_input = request.json.get("message", "")
 
-    # Custom response if asked about Pranav or builder
-    if "who built you" in user_input or "who is pranav" in user_input:
+    # Custom response for questions about Pranav
+    if "who built you" in user_input.lower() or "who is your creator" in user_input.lower():
         return jsonify({
-            "response": (
-                "A.U.R.A. was built by Pranav Kalbhor, a 3rd year CSE student at MIT ADT University, "
-                "specializing in AI & analytics. He loves building cool tech like A.U.R.A., and is also "
-                "known as 'Goblin' in games like Valorant and BGMI!"
-            )
+            "response": "I was built by **Pranav Kalbhor**, a 3rd year CSE student at MIT ADT University, specializing in AI and analytics. He's passionate about tech, innovation, and mental health. He's also a gamer known as *Goblin* in BGMI and Valorant!"
+        })
+    elif "who is pranav" in user_input.lower():
+        return jsonify({
+            "response": "**Pranav Kalbhor** is a 3rd year CSE student at MIT ADT University. He specializes in AI and analytics and is passionate about building innovative tech solutions like me – A.U.R.A. He's also a gamer who goes by the name *Goblin* in Valorant and BGMI!"
         })
 
     payload = {
-        "model": "mistral:instruct",  # or any available free OpenRouter model
+        "model": "openchat:free",
         "messages": [
-            {"role": "system", "content": "You are A.U.R.A., a helpful and empathetic mental health AI assistant."},
-            {"role": "user", "content": user_input}
+            {
+                "role": "system",
+                "content": "You are A.U.R.A., a warm, friendly, and emotionally intelligent AI mental health assistant. Be helpful and supportive."
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
         ]
     }
 
@@ -45,7 +53,14 @@ def chat():
             json=payload
         )
         data = response.json()
+        print("DEBUG RESPONSE:", data)
+
+        # Check if choices exist
+        if "choices" not in data:
+            return jsonify({"response": "Oops! Something went wrong with A.U.R.A.'s response. Please try again shortly."})
+
         return jsonify({"response": data["choices"][0]["message"]["content"].strip()})
+
     except Exception as e:
         return jsonify({"response": f"Error: {str(e)}"})
 
