@@ -1,67 +1,65 @@
-from flask import Flask, request, jsonify, render_template
-import os
+from flask import Flask, render_template, request, jsonify
 import requests
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# OpenRouter API Key and endpoint
 API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Default system prompt for A.U.R.A.'s personality
-SYSTEM_PROMPT = {
-    "role": "system",
-    "content": (
-        "You are A.U.R.A., a friendly, intelligent AI assistant specializing in emotional wellness, "
-        "built by Pranav Kalbhor. If someone asks 'who built you', respond with: "
-        "'I was built by Pranav Kalbhor, a 3rd year CSE student at MIT ADT University, passionate about AI and analytics.' "
-        "If someone asks 'who is Pranav', respond with: "
-        "'Pranav Kalbhor is a 3rd year CSE student at MIT ADT university currently specializing in Artificial Intelligence and analytics. "
-        "He's passionate about exploring and building in tech. He enjoys gaming and is known by his in-game name 'Goblin' in Valorant and BGMI.'"
-    )
+headers = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json",
+    "HTTP-Referer": "https://aura-ai.onrender.com",  # change if needed
+    "X-Title": "AURA",
 }
+
+def custom_logic(user_input):
+    lower_input = user_input.lower()
+    if "who built you" in lower_input or "who is your creator" in lower_input or "who made you" in lower_input:
+        return (
+            "I was built by **Pranav Kalbhor**, a 3rd year CSE student at MIT ADT University, "
+            "specializing in AI and analytics. He's passionate about tech innovation and loves creating new things. "
+            "In his free time, he games under the name **Goblin** in Valorant and BGMI!"
+        )
+    elif "who is pranav" in lower_input:
+        return (
+            "**Pranav Kalbhor** is a tech enthusiast and builder from MIT ADT University. "
+            "He specializes in Artificial Intelligence and Analytics. Also known as **Goblin**, "
+            "he enjoys competitive gaming and building cool AI tools like me — A.U.R.A.!"
+        )
+    return None
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    prompt = data.get("prompt")
+    user_input = request.json.get("message")
+    special_response = custom_logic(user_input)
+    if special_response:
+        return jsonify({"response": special_response})
 
-    if not prompt:
-        return jsonify({"response": "Please provide a prompt."}), 400
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    body = {
-        "model": "mistralai/mistral-7b-instruct",  # or try gpt-3.5 if OpenRouter supports
+    payload = {
+        "model": "mistralai/mistral-7b-instruct:free",
         "messages": [
-            SYSTEM_PROMPT,
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": "You are A.U.R.A., an emotionally supportive and smart AI assistant."},
+            {"role": "user", "content": user_input}
         ]
     }
 
     try:
-        response = requests.post(OPENROUTER_URL, headers=headers, json=body)
-        if response.status_code != 200:
-            return jsonify({"response": f"Error: {response.status_code} - {response.text}"}), 500
-
-        result = response.json()
-        message = result["choices"][0]["message"]["content"]
-        return jsonify({"response": message})
-
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        reply = data["choices"][0]["message"]["content"]
+        return jsonify({"response": reply})
     except Exception as e:
-        return jsonify({"response": f"Something went wrong: {str(e)}"}), 500
-
+        return jsonify({"response": f"Error connecting to A.U.R.A: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
