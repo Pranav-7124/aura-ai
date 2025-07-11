@@ -1,11 +1,12 @@
 function typeText(element, text, delay = 20) {
-    element.innerHTML = "";
-    let i = 0;
+    element.textContent = ""; // clear previous content
+    let index = 0;
 
     function type() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
+        if (index < text.length) {
+            // Add a single character (including spaces!)
+            element.textContent += text[index];
+            index++;
             setTimeout(type, delay);
         }
     }
@@ -26,8 +27,8 @@ function appendMessage(sender, text) {
     chatbox.scrollTop = chatbox.scrollHeight;
 
     if (sender === "aura") {
-        typeText(span, text, 20);
+        typeText(span, text); // trigger typing animation
     } else {
-        span.innerText = text;
+        span.textContent = text;
     }
 }
