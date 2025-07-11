@@ -1,86 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>A.U.R.A. – Your Companion</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A.U.R.A. - Your AI Companion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <div class="animated-bg"></div>
 
-  <div class="chat-container">
-    <h2 class="title">✨ A.U.R.A. 🧠 – Talk to Me</h2>
-
-    <div id="chat-box" class="chat-box"></div>
-
-    <div id="typing" class="typing hidden">A.U.R.A. is typing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
-
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Type or talk..." />
-      <button onclick="sendMessage()">Send</button>
-      <button onclick="startVoice()" id="mic-btn">🎤</button>
+  <!-- Hero / Landing Page -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>A.U.R.A.</h1>
+      <p>Your Adaptive Understanding & Responsive Assistant</p>
+      <a href="#chat"><button class="cta-btn">Start Chatting</button></a>
     </div>
-  </div>
+  </section>
+
+  <!-- Chat Section -->
+  <section id="chat" class="chat-section">
+    <div class="chat-container">
+      <div class="chat-box" id="chat-box"></div>
+      <form id="chat-form">
+        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" required/>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <p>Made with 💙 by Pranav Kalbhor aka Goblin</p>
+  </footer>
 
   <script>
     const chatBox = document.getElementById("chat-box");
-    const typingIndicator = document.getElementById("typing");
+    const chatForm = document.getElementById("chat-form");
+    const userInput = document.getElementById("user-input");
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = userInput.value;
+      appendMessage("You", message);
+      userInput.value = "";
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        const data = await response.json();
+        await typeReply("A.U.R.A.", data.reply);
+      } catch (err) {
+        appendMessage("A.U.R.A.", "Something went wrong...");
+      }
+    });
 
     function appendMessage(sender, text) {
-      const msgDiv = document.createElement("div");
-      msgDiv.className = sender === "user" ? "user-msg fade-in" : "bot-msg fade-in";
-      msgDiv.innerHTML = `<strong>${sender === "user" ? "You" : "A.U.R.A."}:</strong> <span class="msg-text"></span>`;
-      chatBox.appendChild(msgDiv);
+      const msg = document.createElement("div");
+      msg.classList.add("message");
+      msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chatBox.appendChild(msg);
       chatBox.scrollTop = chatBox.scrollHeight;
-      return msgDiv.querySelector('.msg-text');
     }
 
-    async function sendMessage() {
-      const input = document.getElementById("user-input");
-      const message = input.value.trim();
-      if (!message) return;
+    async function typeReply(sender, fullText) {
+      const msg = document.createElement("div");
+      msg.classList.add("message");
+      msg.innerHTML = `<strong>${sender}:</strong> <span class="typing"></span>`;
+      chatBox.appendChild(msg);
 
-      const userSpan = appendMessage("user", message);
-      userSpan.textContent = message;
+      const typingSpan = msg.querySelector(".typing");
 
-      input.value = "";
-      typingIndicator.classList.remove("hidden");
-
-      const response = await fetch("/get_response", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
-      });
-
-      const data = await response.json();
-      typingIndicator.classList.add("hidden");
-
-      const botSpan = appendMessage("bot", "");
-      typeText(botSpan, data.reply);
-    }
-
-    function typeText(el, text, i = 0) {
-      if (i < text.length) {
-        el.textContent += text.charAt(i);
-        setTimeout(() => typeText(el, text, i + 1), 25); // Typing speed
+      for (let i = 0; i < fullText.length; i++) {
+        typingSpan.textContent += fullText.charAt(i);
+        await new Promise((r) => setTimeout(r, 20));
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
-
-    function startVoice() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = "en-US";
-      recognition.start();
-
-      recognition.onresult = function (event) {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById("user-input").value = transcript;
-        sendMessage();
-      };
-
-      recognition.onerror = function (event) {
-        alert("Voice input failed: " + event.error);
-      };
-    }
   </script>
+
 </body>
 </html>
