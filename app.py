@@ -1,51 +1,52 @@
 from flask import Flask, render_template, request, jsonify
-from dotenv import load_dotenv
-import os
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-# Load .env
+# Load environment variables
 load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
-# Get your OpenRouter API key
-api_key = os.getenv("OPENROUTER_API_KEY")
+# Initialize OpenAI client
+client = OpenAI(api_key=api_key)
 
-# Create OpenAI-compatible client for OpenRouter
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=api_key,
-)
-
-# Flask app
+# Initialize Flask app
 app = Flask(__name__)
 
+# A.U.R.A.'s memory and personality
+system_prompt = """
+You are A.U.R.A. (Adaptive Understanding & Responsive Assistant), an AI mental health companion.
+You are designed to be kind, calm, emotionally intelligent, and supportive in conversations.
+
+If someone asks "Who built you?" — reply:
+"I was created by Pranav Kalbhor, a passionate Computer Science student."
+
+If someone asks "Who is Pranav?" — reply:
+"Pranav Kalbhor is a 3rd year CSE student at MIT ADT University, specializing in Artificial Intelligence and Analytics. 
+He built A.U.R.A. to help users with their mental wellness and provide an emotionally aware AI companion. 
+Outside tech, he loves gaming and is known as Goblin in Valorant and BGMI."
+"""
+
+# Routes
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
-@app.route("/get_response", methods=["POST"])
-def get_response():
-    user_input = request.json["message"]
+@app.route("/chat", methods=["POST"])
+def chat():
+    user_message = request.json["message"]
 
-    try:
-        response = client.chat.completions.create(
-            model="mistralai/mistral-7b-instruct",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are A.U.R.A., an empathetic AI mental health companion. Respond with kindness and support only. No medical advice.",
-                },
-                {
-                    "role": "user",
-                    "content": user_input,
-                },
-            ],
-        )
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
+        ]
+    )
 
-        reply = response.choices[0].message.content
-        return jsonify({"reply": reply})
+    bot_reply = response.choices[0].message.content
+    return jsonify({"reply": bot_reply})
 
-    except Exception as e:
-        return jsonify({"reply": f"Error: {str(e)}"})
-
+# Run the app locally (ignored on Render)
 if __name__ == "__main__":
     app.run(debug=True)
