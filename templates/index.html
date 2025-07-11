@@ -1,84 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>A.U.R.A. - Your AI Companion</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta charset="UTF-8">
+  <title>A.U.R.A. | Mental Wellness Companion</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-
-  <!-- Hero / Landing Page -->
-  <section class="hero">
-    <div class="hero-content">
-      <h1>A.U.R.A.</h1>
-      <p>Your Adaptive Understanding & Responsive Assistant</p>
-      <a href="#chat"><button class="cta-btn">Start Chatting</button></a>
-    </div>
-  </section>
-
-  <!-- Chat Section -->
-  <section id="chat" class="chat-section">
-    <div class="chat-container">
-      <div class="chat-box" id="chat-box"></div>
-      <form id="chat-form">
-        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" required/>
-        <button type="submit">Send</button>
-      </form>
-    </div>
-  </section>
-
-  <footer>
-    <p>Made with 💙 by Pranav Kalbhor aka Goblin</p>
-  </footer>
+  <div class="container">
+    <h1>A.U.R.A. 👾</h1>
+    <p>Your Adaptive Understanding & Responsive Assistant</p>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Type your thoughts...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
   <script>
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const userInput = document.getElementById("user-input");
+    async function sendMessage() {
+      const input = document.getElementById('user-input');
+      const message = input.value.trim();
+      if (!message) return;
 
-    chatForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const message = userInput.value;
-      appendMessage("You", message);
-      userInput.value = "";
+      const chatBox = document.getElementById('chat-box');
+      const userDiv = document.createElement('div');
+      userDiv.className = 'user-msg';
+      userDiv.textContent = "You: " + message;
+      chatBox.appendChild(userDiv);
+      input.value = "";
 
-      try {
-        const response = await fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
-        });
-        const data = await response.json();
-        await typeReply("A.U.R.A.", data.reply);
-      } catch (err) {
-        appendMessage("A.U.R.A.", "Something went wrong...");
-      }
-    });
+      const botDiv = document.createElement('div');
+      botDiv.className = 'bot-msg';
+      botDiv.textContent = "A.U.R.A. is typing...";
+      chatBox.appendChild(botDiv);
 
-    function appendMessage(sender, text) {
-      const msg = document.createElement("div");
-      msg.classList.add("message");
-      msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ message })
+      });
 
-    async function typeReply(sender, fullText) {
-      const msg = document.createElement("div");
-      msg.classList.add("message");
-      msg.innerHTML = `<strong>${sender}:</strong> <span class="typing"></span>`;
-      chatBox.appendChild(msg);
+      const data = await response.json();
+      botDiv.textContent = "";
 
-      const typingSpan = msg.querySelector(".typing");
-
-      for (let i = 0; i < fullText.length; i++) {
-        typingSpan.textContent += fullText.charAt(i);
-        await new Promise((r) => setTimeout(r, 20));
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
+      let i = 0;
+      const typing = setInterval(() => {
+        botDiv.textContent += data.reply.charAt(i);
+        i++;
+        if (i >= data.reply.length) clearInterval(typing);
+      }, 30);
     }
   </script>
-
 </body>
 </html>

@@ -1,48 +1,42 @@
 from flask import Flask, render_template, request, jsonify
-import openai
-import os
+from openai import OpenAI
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
-# Set OpenRouter key and endpoint
-openai.api_key = os.getenv("PENROUTER_API_KEY")
-openai.api_base = "https://openrouter.ai/api/v1"
-
 app = Flask(__name__)
 
-# AURA's identity
-system_prompt = """
-You are A.U.R.A. (Adaptive Understanding & Responsive Assistant), an AI mental health companion.
-You are designed to be kind, calm, emotionally intelligent, and supportive in conversations.
+client = OpenAI(api_key=os.getenv("OPENROUTER_API_KEY"))
 
-If someone asks "Who built you?" — reply:
-"I was created by Pranav Kalbhor, a passionate Computer Science student."
-
-If someone asks "Who is Pranav?" — reply:
-"Pranav Kalbhor is a 3rd year CSE student at MIT ADT University, specializing in Artificial Intelligence and Analytics. 
-He built A.U.R.A. to help users with their mental wellness and provide an emotionally aware AI companion. 
-Outside tech, he loves gaming and is known as Goblin in Valorant and BGMI."
-"""
-
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    user_message = request.json["message"]
+@app.route('/ask', methods=['POST'])
+def ask():
+    user_input = request.json.get('message')
 
-    response = openai.ChatCompletion.create(
-        model="openchat/openchat-3.5-1210",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-    )
+    # Custom response to "who is pranav"
+    if "who is pranav" in user_input.lower():
+        response_text = (
+            "Pranav Kalbhor is a 3rd year CSE student at MIT ADT University, specializing in AI & Analytics. "
+            "He's passionate about tech, gaming, and innovation. He built A.U.R.A., your adaptive mental wellness companion. "
+            "He also goes by 'Goblin' in games like Valorant and BGMI."
+        )
+    elif "who built you" in user_input.lower():
+        response_text = "I was built by Pranav Kalbhor – a brilliant AI enthusiast from MIT ADT University."
+    else:
+        try:
+            response = client.chat.completions.create(
+                model="openchat/openchat-3.5-1210",
+                messages=[
+                    {"role": "system", "content": "You are A.U.R.A., a friendly, Gen Z mental health AI companion."},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            response_text = response.choices[0].message.content
+        except Exception as e:
+            response_text = f"A.U.R.A.: Error - {str(e)}"
 
-    bot_reply = response.choices[0].message["content"]
-    return jsonify({"reply": bot_reply})
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    return jsonify({'reply': response_text})
