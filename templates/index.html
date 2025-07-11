@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>A.U.R.A. – Your Companion</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="animated-bg"></div>
+
+  <div class="chat-container">
+    <h2 class="title">✨ A.U.R.A. 🧠 – Talk to Me</h2>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <div id="typing" class="typing hidden">A.U.R.A. is typing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type or talk..." />
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="startVoice()" id="mic-btn">🎤</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const typingIndicator = document.getElementById("typing");
+
+    function appendMessage(sender, text) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = sender === "user" ? "user-msg fade-in" : "bot-msg fade-in";
+      msgDiv.innerHTML = `<strong>${sender === "user" ? "You" : "A.U.R.A."}:</strong> <span class="msg-text"></span>`;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msgDiv.querySelector('.msg-text');
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      const userSpan = appendMessage("user", message);
+      userSpan.textContent = message;
+
+      input.value = "";
+      typingIndicator.classList.remove("hidden");
+
+      const response = await fetch("/get_response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await response.json();
+      typingIndicator.classList.add("hidden");
+
+      const botSpan = appendMessage("bot", "");
+      typeText(botSpan, data.reply);
+    }
+
+    function typeText(el, text, i = 0) {
+      if (i < text.length) {
+        el.textContent += text.charAt(i);
+        setTimeout(() => typeText(el, text, i + 1), 25); // Typing speed
+      }
+    }
+
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("user-input").value = transcript;
+        sendMessage();
+      };
+
+      recognition.onerror = function (event) {
+        alert("Voice input failed: " + event.error);
+      };
+    }
+  </script>
+</body>
+</html>
