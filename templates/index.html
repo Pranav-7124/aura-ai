@@ -2,25 +2,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>A.U.R.A. - Your Mental Wellness Companion</title>
+    <title>A.U.R.A. - Your Mental Health Companion</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="hero">
-        <h1>Welcome to A.U.R.A.</h1>
-        <p>Your AI companion for emotional wellness 🌈</p>
+    <div class="background"></div>
+    <div class="chat-container">
+        <div class="header">
+            <h1>A.U.R.A.</h1>
+            <p>Adaptive Understanding & Responsive Assistant</p>
+        </div>
+        <div id="chat-box" class="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="How are you feeling today?">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
+    <footer>Made with 💜 by Pranav Kalbhor</footer>
 
-    <div id="chatbox" class="chatbox"></div>
+    <script>
+        function sendMessage() {
+            const input = document.getElementById("user-input");
+            const message = input.value.trim();
+            if (!message) return;
 
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Type your thoughts..." autofocus>
-        <button onclick="sendMessage()">Send</button>
-    </div>
+            appendMessage("You", message);
+            input.value = "";
 
-    <footer>Made with ❤️ by Pranav Kalbhor</footer>
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                typeMessage("A.U.R.A.", data.reply);
+            })
+            .catch(error => {
+                appendMessage("A.U.R.A.", "Error connecting to A.U.R.A.");
+            });
+        }
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        function appendMessage(sender, message) {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message");
+            msgDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function typeMessage(sender, message) {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message");
+            chatBox.appendChild(msgDiv);
+
+            let index = 0;
+            const interval = setInterval(() => {
+                msgDiv.innerHTML = `<strong>${sender}:</strong> ${message.substring(0, index)}<span class="cursor">|</span>`;
+                index++;
+                if (index > message.length) {
+                    clearInterval(interval);
+                    msgDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }, 20);
+        }
+
+        document.getElementById("user-input").addEventListener("keypress", function (e) {
+            if (e.key === "Enter") sendMessage();
+        });
+    </script>
 </body>
 </html>
